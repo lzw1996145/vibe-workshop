@@ -11,8 +11,9 @@ export async function generateStaticParams() {
 }
 
 // 生成元数据
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const category = decodeURIComponent(params.slug)
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const category = decodeURIComponent(slug)
   const posts = getPostsByCategory(category)
 
   if (posts.length === 0) {
@@ -28,8 +29,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 // 分类详情组件
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
-  const category = decodeURIComponent(params.slug)
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const category = decodeURIComponent(slug)
   const posts = getPostsByCategory(category)
 
   if (posts.length === 0) {

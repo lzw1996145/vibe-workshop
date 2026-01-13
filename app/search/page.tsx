@@ -11,9 +11,10 @@ export const metadata = {
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: { q?: string }
+  searchParams: Promise<{ q?: string }>
 }) {
-  const query = searchParams.q || ''
+  const resolvedParams = await searchParams
+  const query = resolvedParams.q || ''
   const allPosts = getAllPosts()
 
   // 如果没有查询，显示所有文章

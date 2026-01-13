@@ -11,8 +11,9 @@ export async function generateStaticParams() {
 }
 
 // 生成元数据
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const tag = decodeURIComponent(params.slug)
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const tag = decodeURIComponent(slug)
   const posts = getPostsByTag(tag)
 
   if (posts.length === 0) {
@@ -28,8 +29,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 // 标签详情组件
-export default async function TagPage({ params }: { params: { slug: string } }) {
-  const tag = decodeURIComponent(params.slug)
+export default async function TagPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const tag = decodeURIComponent(slug)
   const posts = getPostsByTag(tag)
 
   if (posts.length === 0) {
