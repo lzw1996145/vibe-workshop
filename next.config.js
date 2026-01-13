@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 配置页面扩展
   pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
 
   // 配置图像优化
@@ -30,7 +29,6 @@ const nextConfig = {
 
   // 配置生成源映射（开发环境）
   productionBrowserSourceMaps: false,
-
 }
 
 module.exports = nextConfig

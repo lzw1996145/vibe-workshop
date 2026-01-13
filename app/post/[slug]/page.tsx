@@ -10,10 +10,15 @@ import type { Components } from 'react-markdown'
 
 // 生成静态参数（预渲染所有文章页面）
 export async function generateStaticParams() {
-  const posts = getAllPosts()
-  return posts.map((post) => ({
-    slug: post.slug,
-  }))
+  try {
+    const posts = getAllPosts()
+    return posts.map((post) => ({
+      slug: post.slug,
+    }))
+  } catch (error) {
+    console.error('Error generating static params:', error)
+    return []
+  }
 }
 
 // 生成元数据
@@ -48,7 +53,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 // 文章详情组件
 export default async function PostPage({ params }: { params: { slug: string } }) {
-  const post = getPostBySlug(params.slug)
+  // 处理 undefined 的情况
+  const slug = params.slug || ''
+  
+  const post = getPostBySlug(slug)
 
   if (!post) {
     notFound()
