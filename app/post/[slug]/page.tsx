@@ -7,6 +7,7 @@ import rehypeHighlight from 'rehype-highlight'
 import rehypeSlug from 'rehype-slug'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import type { Components } from 'react-markdown'
+import PostActions from '@/components/PostActions'
 
 // 生成静态参数（预渲染所有文章页面）
 export async function generateStaticParams() {
@@ -22,8 +23,9 @@ export async function generateStaticParams() {
 }
 
 // 生成元数据
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const post = getPostBySlug(params.slug)
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const post = getPostBySlug(slug)
 
   if (!post) {
     return {
@@ -52,9 +54,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 // 文章详情组件
-export default async function PostPage({ params }: { params: { slug: string } }) {
-  // 处理 undefined 的情况
-  const slug = params.slug || ''
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Next.js 15+ 需要 await params
+  const { slug } = await params
   
   const post = getPostBySlug(slug)
 
@@ -210,34 +212,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
       )}
 
       {/* 文章操作区 */}
-      <section className="mt-12 p-6 bg-[var(--muted)]/50 rounded-lg">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex gap-2">
-            <button
-              onClick={() => window.history.back()}
-              className="btn btn-secondary btn-sm"
-            >
-              ← 返回
-            </button>
-            <Link href="/" className="btn btn-outline btn-sm">
-              首页
-            </Link>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={() => {
-                // 复制链接功能
-                navigator.clipboard.writeText(window.location.href)
-                alert('链接已复制到剪贴板')
-              }}
-            >
-              分享
-            </button>
-          </div>
-        </div>
-      </section>
+      <PostActions />
 
       {/* 页脚信息 */}
       <footer className="mt-16 text-center text-sm text-[var(--muted-foreground)] border-t border-[var(--border)] pt-8">

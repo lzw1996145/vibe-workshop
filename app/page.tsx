@@ -128,24 +128,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* CTA区域 */}
-      <section className="bg-[var(--muted)]/50 rounded-lg p-6 sm:p-8 text-center">
-        <h3 className="text-lg sm:text-xl font-bold mb-2">订阅更新</h3>
-        <p className="text-sm sm:text-base text-[var(--muted-foreground)] mb-4">
-          获取最新的技术笔记和思考
-        </p>
-        <div className="flex justify-center gap-2 max-w-md mx-auto flex-wrap">
-          <input
-            type="email"
-            placeholder="你的邮箱"
-            className="flex-1 min-w-[200px] px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:outline-none focus:ring-2 focus:ring-foreground/20 text-sm sm:text-base"
-          />
-          <button className="btn btn-primary">
-            订阅
-          </button>
-        </div>
-      </section>
     </div>
   )
 }

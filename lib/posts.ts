@@ -97,8 +97,11 @@ function generateSlug(filename: string): string {
   
   let slug = name
     .replace(/\s+/g, '-')
-    .replace(/[、，。！？；：""''（）\(\)\[\]]/g, '-')
-    .replace(/[^\w\u4e00-\u9fa5-]/g, '')
+    // 移除所有括号及其内容（支持中文和英文括号）
+    .replace(/（[^）]*）/g, '')
+    .replace(/\([^)]*\)/g, '')
+    // 替换其他标点符号为连字符
+    .replace(/[、，。！？；：""''\[\]]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
     .trim()
