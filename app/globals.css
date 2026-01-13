@@ -77,22 +77,27 @@
 
 /* 自定义工具类 */
 @layer utilities {
+  /* 窄容器 - 适合移动端和内容密集的页面 */
   .container-narrow {
     max-width: 65ch;
     margin-left: auto;
     margin-right: auto;
     padding-left: 1rem;
     padding-right: 1rem;
+    width: 100%;
   }
 
+  /* 宽容器 - 适合桌面端多列布局 */
   .container-wide {
     max-width: 80rem;
     margin-left: auto;
     margin-right: auto;
     padding-left: 1rem;
     padding-right: 1rem;
+    width: 100%;
   }
 
+  /* 按钮样式 */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -101,6 +106,8 @@
     border-radius: 0.375rem;
     font-weight: 500;
     transition: all 0.2s;
+    cursor: pointer;
+    border: none;
   }
 
   .btn-primary {
@@ -123,24 +130,39 @@
 
   .btn-outline {
     border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
+    background: transparent;
+    color: var(--foreground);
   }
 
   .btn-outline:hover {
     border-color: color-mix(in srgb, var(--foreground) 40%, transparent);
   }
 
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+  }
+
+  /* 卡片样式 */
   .card {
     border: 1px solid var(--border);
     border-radius: 0.5rem;
     padding: 1rem;
     transition: all 0.2s;
+    background: var(--background);
   }
 
-  .card:hover {
+  .card-hover:hover {
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
   }
 
+  /* 标签样式 */
   .tag {
     display: inline-block;
     padding: 0.25rem 0.5rem;
@@ -149,24 +171,29 @@
     background-color: var(--muted);
     color: color-mix(in srgb, var(--foreground) 70%, transparent);
     transition: all 0.2s;
+    text-decoration: none;
   }
 
   .tag:hover {
     background-color: color-mix(in srgb, var(--muted) 80%, transparent);
   }
 
+  /* 搜索输入框 */
   .search-input {
     width: 100%;
     padding: 0.5rem 1rem;
     border: 1px solid var(--border);
     border-radius: 0.5rem;
     outline: none;
+    background: var(--background);
+    color: var(--foreground);
   }
 
   .search-input:focus {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--foreground) 10%, transparent);
   }
 
+  /* 文本截断 */
   .truncate-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -181,6 +208,7 @@
     overflow: hidden;
   }
 
+  /* 骨架屏加载 */
   .skeleton {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     background-color: color-mix(in srgb, var(--muted) 80%, transparent);
@@ -213,6 +241,13 @@
     margin-bottom: 0.5rem;
   }
 
+  .markdown-content h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
   .markdown-content p {
     margin-bottom: 1rem;
   }
@@ -227,10 +262,20 @@
     margin-bottom: 0.25rem;
   }
 
+  .markdown-content ul {
+    list-style-type: disc;
+  }
+
+  .markdown-content ol {
+    list-style-type: decimal;
+  }
+
   .markdown-content table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
+    overflow-x: auto;
+    display: block;
   }
 
   .markdown-content table th,
@@ -280,6 +325,60 @@
   @media print {
     .no-print {
       display: none !important;
+    }
+  }
+
+  /* 响应式优化 - 移动端 */
+  @media (max-width: 640px) {
+    .container-narrow {
+      max-width: 100%;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    .container-wide {
+      max-width: 100%;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    .markdown-content h1 {
+      font-size: 1.5rem;
+    }
+
+    .markdown-content h2 {
+      font-size: 1.25rem;
+    }
+
+    .markdown-content h3 {
+      font-size: 1.125rem;
+    }
+
+    .btn-lg {
+      padding: 0.625rem 1.25rem;
+      font-size: 1rem;
+    }
+  }
+
+  /* 响应式优化 - 平板 */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .container-narrow {
+      max-width: 90%;
+    }
+  }
+
+  /* 响应式优化 - 桌面端 */
+  @media (min-width: 1025px) {
+    .container-narrow {
+      max-width: 65ch;
+    }
+
+    .markdown-content h1 {
+      font-size: 2rem;
+    }
+
+    .markdown-content h2 {
+      font-size: 1.5rem;
     }
   }
 }

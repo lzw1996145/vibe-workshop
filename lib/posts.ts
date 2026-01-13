@@ -3,7 +3,6 @@ import path from 'path'
 import matter from 'gray-matter'
 import { format } from 'date-fns'
 
-// 博客文章的元数据接口
 export interface PostMeta {
   slug: string
   title: string
@@ -15,16 +14,13 @@ export interface PostMeta {
   readingTime: number
 }
 
-// 完整文章接口
 export interface Post extends PostMeta {
   content: string
   rawContent: string
 }
 
-// 内容目录路径
 const postsDirectory = path.join(process.cwd(), 'content', 'posts')
 
-// 获取所有Markdown文件路径
 function getPostFiles(): string[] {
   if (!fs.existsSync(postsDirectory)) {
     return []
@@ -32,165 +28,257 @@ function getPostFiles(): string[] {
   return fs.readdirSync(postsDirectory).filter(file => file.endsWith('.md'))
 }
 
-// 从文件名生成分类和标签
-function generateCategoryAndTags(filename: string): { category: string; tags: string[] } {
-  // 移除.md后缀
-  const name = filename.replace(/\.md$/, '')
+function extractTitleFromContent(content: string): string {
+  if (!content) return '未命名文章'
+  const match = content.match(/^#\s+(.+)$/m)
+  if (match) {
+    return match[1].trim()
+  }
+  return '未命名文章'
+}
 
-  // 根据文件名特征分类
-  let category = '其他'
+function generateCategoryAndTags(filename: string, content: string = ''): { category: string; tags: string[] } {
+  const safeContent = content || ''
+  const name = filename.replace(/\.md$/, '')
+  const lowerName = name.toLowerCase()
+  const lowerContent = safeContent.toLowerCase()
+
+  let category = '技术笔记'
   const tags: string[] = []
 
-  if (name.includes('STM32') || name.includes('stm32')) {
+  if (lowerName.includes('stm32') || lowerContent.includes('stm32') || 
+      lowerName.includes('gpio') || lowerContent.includes('gpio')) {
     category = '嵌入式开发'
-    tags.push('STM32')
-  }
-  if (name.includes('蓝桥杯')) {
-    category = '竞赛经验'
-    tags.push('蓝桥杯')
-  }
-  if (name.includes('GPIO') || name.includes('中断')) {
-    tags.push('GPIO', '中断')
-  }
-  if (name.includes('调度器') || name.includes('框架')) {
-    tags.push('调度器', '框架')
+    if (!tags.includes('STM32')) tags.push('STM32')
   }
 
-  // 如果没有匹配到特定分类，使用通用分类
-  if (category === '其他') {
-    category = '技术笔记'
+  if (lowerName.includes('蓝桥杯') || lowerName.includes('ct117e')) {
+    category = '竞赛经验'
+    if (!tags.includes('蓝桥杯')) tags.push('蓝桥杯')
+  }
+
+  if (lowerName.includes('at2402') || lowerContent.includes('at2402') ||
+      lowerName.includes('ds18b20') || lowerContent.includes('ds18b20') ||
+      lowerName.includes('pcf8591') || lowerContent.includes('pcf8591')) {
+    category = '嵌入式开发'
+    tags.push('外设模块')
+  }
+
+  const contentKeywords = {
+    '中断': ['中断', 'exti'],
+    '定时器': ['定时器', 'tim', 'pwm'],
+    'ADC': ['adc', '模数转换', 'dma'],
+    'I2C': ['i2c', 'at2402'],
+    '串口': ['uart', 'usart', '串口'],
+    'LED': ['led', '锁存器'],
+    'LCD': ['lcd'],
+    '按键': ['key', '按键'],
+    'GPIO': ['gpio', '引脚'],
+    '编码器': ['encoder', '编码器'],
+  }
+
+  for (const [tag, keywords] of Object.entries(contentKeywords)) {
+    if (keywords.some(keyword => lowerContent.includes(keyword)) && !tags.includes(tag)) {
+      tags.push(tag)
+    }
+  }
+
+  if (lowerName.includes('调度器') || lowerName.includes('框架') || 
+      lowerContent.includes('调度器') || lowerContent.includes('框架')) {
+    if (!tags.includes('调度器')) tags.push('调度器')
+    if (!tags.includes('框架')) tags.push('框架')
   }
 
   return { category, tags }
 }
 
-// 计算阅读时间（基于字数，假设每分钟阅读300字）
-function calculateReadingTime(content: string): number {
-  const words = content.trim().split(/\s+/).length
-  return Math.ceil(words / 300)
+function generateSlug(filename: string): string {
+  const name = filename.replace(/\.md$/, '')
+  
+  let slug = name
+    .replace(/\s+/g, '-')
+    .replace(/[、，。！？；：""''（）\(\)\[\]]/g, '-')
+    .replace(/[^\w\u4e00-\u9fa5-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .trim()
+  
+  if (!slug) {
+    slug = name
+  }
+  
+  return slug
 }
 
-// 提取摘要（前150个字）
-function extractExcerpt(content: string): string {
-  // 移除代码块、表格等特殊格式
+function calculateReadingTime(content: string): number {
+  if (!content) return 1
   const cleanContent = content
     .replace(/```[\s\S]*?```/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\n\s*\n/g, '\n')
+  
+  const words = cleanContent.trim().split(/\s+/).length
+  const time = Math.ceil(words / 300)
+  return Math.max(1, time)
+}
+
+function extractExcerpt(content: string): string {
+  const safeContent = content || ''
+  const cleanContent = safeContent
+    .replace(/```[\s\S]*?```/g, '')
     .replace(/<table>[\s\S]*?<\/table>/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[.*?\]\(.*?\)/g, '')
     .replace(/[#>*`]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
 
-  return cleanContent.substring(0, 150) + (cleanContent.length > 150 ? '...' : '')
+  if (cleanContent.length <= 150) {
+    return cleanContent
+  }
+  return cleanContent.substring(0, 150) + '...'
 }
 
-// 获取所有文章的元数据（按日期倒序）
 export function getAllPosts(): PostMeta[] {
   const files = getPostFiles()
 
   const posts = files.map(file => {
-    const filePath = path.join(postsDirectory, file)
+    try {
+      const filePath = path.join(postsDirectory, file)
+      const fileContent = fs.readFileSync(filePath, 'utf-8')
+      const { data, content } = matter(fileContent)
+
+      const slug = generateSlug(file)
+      let title = data.title || extractTitleFromContent(content) || slug
+
+      const stats = fs.statSync(filePath)
+      const date = data.date ? new Date(data.date) : new Date(stats.mtime)
+
+      const { category, tags } = generateCategoryAndTags(file, content || '')
+      const allTags = [...tags, ...(data.tags || [])]
+      const uniqueTags = [...new Set(allTags)]
+
+      return {
+        slug,
+        title,
+        date: date.toISOString(),
+        formattedDate: format(date, 'yyyy年MM月dd日'),
+        category: data.category || category,
+        tags: uniqueTags,
+        excerpt: data.excerpt || extractExcerpt(content || ''),
+        readingTime: calculateReadingTime(content || '')
+      }
+    } catch (error) {
+      console.error('Error processing file:', file, error)
+      return null
+    }
+  }).filter((post): post is PostMeta => post !== null)
+
+  return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+}
+
+export function getPostBySlug(slug: string): Post | null {
+  try {
+    const possibleFiles = [
+      `${slug}.md`,
+      `${encodeURIComponent(slug)}.md`,
+    ]
+
+    let filePath: string | null = null
+    for (const file of possibleFiles) {
+      const testPath = path.join(postsDirectory, file)
+      if (fs.existsSync(testPath)) {
+        filePath = testPath
+        break
+      }
+    }
+
+    if (!filePath) {
+      const files = getPostFiles()
+      const matchedFile = files.find(file => {
+        const fileSlug = generateSlug(file)
+        return fileSlug === slug || fileSlug.toLowerCase() === slug.toLowerCase()
+      })
+      
+      if (matchedFile) {
+        filePath = path.join(postsDirectory, matchedFile)
+      }
+    }
+
+    if (!filePath) {
+      return null
+    }
+
     const fileContent = fs.readFileSync(filePath, 'utf-8')
     const { data, content } = matter(fileContent)
 
-    // 从文件名生成slug（URL友好的标识符）
-    const slug = file.replace(/\.md$/, '')
+    const stats = fs.statSync(filePath)
+    const date = data.date ? new Date(data.date) : new Date(stats.mtime)
 
-    // 从front matter或文件名生成元数据
-    const date = data.date ? new Date(data.date) : new Date()
-    const { category, tags } = generateCategoryAndTags(file)
+    let title = data.title || extractTitleFromContent(content || '') || slug
 
-    // 合并front matter中的标签
+    const { category, tags } = generateCategoryAndTags(path.basename(filePath), content || '')
     const allTags = [...tags, ...(data.tags || [])]
-
-    // 去重
     const uniqueTags = [...new Set(allTags)]
 
     return {
       slug,
-      title: data.title || slug,
+      title,
       date: date.toISOString(),
       formattedDate: format(date, 'yyyy年MM月dd日'),
       category: data.category || category,
       tags: uniqueTags,
-      excerpt: data.excerpt || extractExcerpt(content),
-      readingTime: calculateReadingTime(content)
+      excerpt: data.excerpt || extractExcerpt(content || ''),
+      readingTime: calculateReadingTime(content || ''),
+      content: content || '',
+      rawContent: fileContent
     }
-  })
-
-  // 按日期倒序排序
-  return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-}
-
-// 根据slug获取单篇文章
-export function getPostBySlug(slug: string): Post | null {
-  const filePath = path.join(postsDirectory, `${slug}.md`)
-
-  if (!fs.existsSync(filePath)) {
+  } catch (error) {
+    console.error('Error getting post by slug:', slug, error)
     return null
   }
-
-  const fileContent = fs.readFileSync(filePath, 'utf-8')
-  const { data, content } = matter(fileContent)
-
-  const { category, tags } = generateCategoryAndTags(`${slug}.md`)
-
-  // 合并front matter中的标签
-  const allTags = [...tags, ...(data.tags || [])]
-  const uniqueTags = [...new Set(allTags)]
-
-  const date = data.date ? new Date(data.date) : new Date()
-
-  return {
-    slug,
-    title: data.title || slug,
-    date: date.toISOString(),
-    formattedDate: format(date, 'yyyy年MM月dd日'),
-    category: data.category || category,
-    tags: uniqueTags,
-    excerpt: data.excerpt || extractExcerpt(content),
-    readingTime: calculateReadingTime(content),
-    content: content,
-    rawContent: fileContent
-  }
 }
 
-// 获取所有分类
 export function getAllCategories(): string[] {
   const posts = getAllPosts()
   const categories = posts.map(post => post.category)
   return [...new Set(categories)].sort()
 }
 
-// 获取所有标签
 export function getAllTags(): string[] {
   const posts = getAllPosts()
   const tags = posts.flatMap(post => post.tags)
   return [...new Set(tags)].sort()
 }
 
-// 根据分类筛选文章
 export function getPostsByCategory(category: string): PostMeta[] {
   const posts = getAllPosts()
   return posts.filter(post => post.category === category)
 }
 
-// 根据标签筛选文章
 export function getPostsByTag(tag: string): PostMeta[] {
   const posts = getAllPosts()
   return posts.filter(post => post.tags.includes(tag))
 }
 
-// 搜索文章（标题、摘要、内容）
 export function searchPosts(query: string): PostMeta[] {
   const posts = getAllPosts()
   const lowerQuery = query.toLowerCase()
 
   return posts.filter(post => {
-    const content = fs.readFileSync(path.join(postsDirectory, `${post.slug}.md`), 'utf-8')
-    return (
-      post.title.toLowerCase().includes(lowerQuery) ||
-      post.excerpt.toLowerCase().includes(lowerQuery) ||
-      content.toLowerCase().includes(lowerQuery)
-    )
+    const filePath = path.join(postsDirectory, `${post.slug}.md`)
+    if (!fs.existsSync(filePath)) return false
+    
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8')
+      return (
+        post.title.toLowerCase().includes(lowerQuery) ||
+        post.excerpt.toLowerCase().includes(lowerQuery) ||
+        (content && content.toLowerCase().includes(lowerQuery)) ||
+        post.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+      )
+    } catch {
+      return false
+    }
   })
 }
